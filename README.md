@@ -2,8 +2,6 @@
 
 # Linear GitHub Standup
 
-**Turn your Linear tickets & GitHub PRs into a daily standup for Slack.**
-
 Single Python script. Fetches your activity, formats a message, posts it (or prints to terminal).
 
 <p>
@@ -13,24 +11,9 @@ Single Python script. Fetches your activity, formats a message, posts it (or pri
   <img src="https://img.shields.io/badge/Slack-4A154B.svg?logo=slack&logoColor=white" alt="Slack">
 </p>
 
+<img src="https://github.com/y2-znt/linear-github-standup/blob/main/images/linear-github-stand-up.png" alt="Linear GitHub Standup — Turn your Linear tickets & GitHub PRs into a daily standup for Slack." width="800">
+
 </div>
-
-```
-*Standup — Wednesday 15 Jul*
-
-✅ *Done yesterday*
-- ENG-42 — Fix login redirect (#128 merged)
-- PR #129 merged — Add rate limiting middleware
-
-👀 *Reviews*
-- #127 — Refactor auth module (@teammate's PR)
-
-🔨 *Working on today*
-- ENG-43 — Dashboard v2 (#130 open)
-
-🚧 *Blockers*
-- ENG-44 — Waiting on API credentials
-```
 
 ## What it does
 
