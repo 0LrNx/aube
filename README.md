@@ -2,9 +2,9 @@
 
 # Linear GitHub Standup
 
-**Daily standup generator from Linear tickets, GitHub pull requests and code reviews.**
+**Turn your Linear tickets & GitHub PRs into a daily standup for Slack.**
 
-Fetches your work, formats it, posts to Slack.
+Single Python script. Fetches your activity, formats a message, posts it (or prints to terminal).
 
 <p>
   <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+">
@@ -13,63 +13,67 @@ Fetches your work, formats it, posts to Slack.
   <img src="https://img.shields.io/badge/Slack-4A154B.svg?logo=slack&logoColor=white" alt="Slack">
 </p>
 
+</div>
+
 ```
 *Standup — Wednesday 15 Jul*
 
-*Done yesterday*
-- ENG-42 — Fix login bug (#123 merged)
-- PR #124 merged — Refactor auth module
+✅ *Done yesterday*
+- ENG-42 — Fix login redirect (#128 merged)
+- PR #129 merged — Add rate limiting middleware
 
-*Working on today*
-- ENG-43 — New dashboard (#125 open)
+👀 *Reviews*
+- #127 — Refactor auth module (by @teammate)
 
-*Blockers*
-- ENG-44 — Blocked on API access
+🔨 *Working on today*
+- ENG-43 — Dashboard v2 (#130 open)
+
+🚧 *Blockers*
+- ENG-44 — Waiting on API credentials
 ```
-
-</div>
 
 ## What it does
 
-Every weekday morning, the script pulls your recent activity and posts a ready-to-paste standup to Slack.
+- **Done** — completed Linear issues + merged PRs
+- **Reviews** — PRs you reviewed (not your own)
+- **In progress** — started issues + open PRs
+- **Blockers** — issues with "block" in the title
+- **Ticket ↔ PR pairing** — when the Linear ID appears in the PR title
+- **Monday-aware** — lookback goes back to Friday
 
-- **Done** — completed Linear issues + merged PRs from the lookback window
-- **Reviews** — PRs you reviewed (excluding your own)
-- **Working on today** — in-progress issues + open PRs
-- **Blockers** — flagged issues with "block" in the title
-- **Ticket ↔ PR pairing** — links a Linear issue to its PR when the ID appears in the title
-
-On Mondays, the lookback extends to Friday to cover the weekend.
-
-## Quickstart
+## Setup
 
 ```bash
-git clone https://github.com/y2-znt/linear-github-standup.git && cd linear-github-standup
+git clone https://github.com/y2-znt/linear-github-standup.git
+cd linear-github-standup
 python3 -m venv .venv && source .venv/bin/activate
-pip install requests && cp .env.example .env
+pip install requests
+cp .env.example .env
+```
+
+`.env`:
+
+```
+GITHUB_TOKEN=       # PAT with repo scope
+GITHUB_USERNAME=
+LINEAR_TOKEN=       # Linear personal API key
+SLACK_WEBHOOK_URL=  # optional
+```
+
+```bash
 python standup.py
 ```
 
-Fill `.env` with your tokens (see below). Without `SLACK_WEBHOOK_URL`, output prints to the terminal.
-
-**Cron** — weekdays at 9am:
+**Cron** (weekdays 9am):
 
 ```
-0 9 * * 1-5 cd /path/to/linear-github-standup && .venv/bin/python standup.py
-```
-
-## Stack
-
-```
-Linear API + GitHub API → standup.py → Slack Incoming Webhook
+0 9 * * 1-5 cd /path/to/Linear-GitHub-Standup && .venv/bin/python standup.py
 ```
 
 ## Tokens
 
-**GitHub** — [Settings → Tokens (classic)](https://github.com/settings/tokens) → Generate → `repo` scope → `GITHUB_TOKEN` + `GITHUB_USERNAME`
+- **GitHub** — [Settings → Tokens (classic)](https://github.com/settings/tokens), `repo` scope
+- **Linear** — [Settings → API](https://linear.app/settings/api) → Personal API keys
+- **Slack** — [api.slack.com/apps](https://api.slack.com/apps) → Incoming Webhooks → add to workspace
 
-**Linear** — [Settings → API](https://linear.app/settings/api) → Personal API keys → Create key → `LINEAR_TOKEN`
-
-**Slack** — [api.slack.com/apps](https://api.slack.com/apps) → Create app → Incoming Webhooks → enable → Add to workspace → `SLACK_WEBHOOK_URL`
-
-> **Note:** All API calls run locally. Your tokens never leave your machine.
+Everything runs locally. Tokens stay in your `.env`.
