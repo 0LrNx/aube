@@ -30,7 +30,7 @@ Single Python script. Fetches your activity, formats a message, posts it (or pri
 git clone https://github.com/y2-znt/linear-github-standup.git
 cd linear-github-standup
 python3 -m venv .venv && source .venv/bin/activate
-pip install requests
+pip install -r requirements.txt
 cp .env.example .env
 ```
 
@@ -50,7 +50,7 @@ python standup.py
 **Cron** (weekdays 9am):
 
 ```
-0 9 * * 1-5 cd /path/to/Linear-GitHub-Standup && .venv/bin/python standup.py
+0 9 * * 1-5 cd /path/to/linear-github-standup && .venv/bin/python standup.py
 ```
 
 ## Tokens

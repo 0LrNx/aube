@@ -13,6 +13,7 @@ Cron (every weekday at 9am):
 """
 
 import os
+import sys
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -35,6 +36,25 @@ def _load_env():
 
 
 _load_env()
+
+REQUIRED_ENV = ("GITHUB_TOKEN", "GITHUB_USERNAME", "LINEAR_TOKEN")
+
+
+def _validate_env() -> None:
+    missing = [key for key in REQUIRED_ENV if not os.environ.get(key, "").strip()]
+    if not missing:
+        return
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    print("Missing required environment variables:", ", ".join(missing), file=sys.stderr)
+    if not os.path.exists(env_path):
+        print(f"\nNo .env file found. Create one from the example:", file=sys.stderr)
+        print("  cp .env.example .env", file=sys.stderr)
+    else:
+        print(f"\nFill in the missing values in {env_path}", file=sys.stderr)
+    sys.exit(1)
+
+
+_validate_env()
 
 # ── Config ────────────────────────────────────────────────────────────────────
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
