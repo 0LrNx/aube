@@ -174,7 +174,7 @@ def _format_pr(pr: dict, status: str) -> str:
 def _format_review(review: dict) -> str:
     number = _link(review.get("html_url"), f"#{review['number']}")
     author = review["user"]["login"]
-    return f"- {number} — {review['title']} (by @{author})"
+    return f"- {number} — {review['title']} (@{author}'s PR)"
 
 
 def _matches_issue(pr: dict, issue: dict) -> bool:

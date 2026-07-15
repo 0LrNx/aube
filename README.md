@@ -23,7 +23,7 @@ Single Python script. Fetches your activity, formats a message, posts it (or pri
 - PR #129 merged — Add rate limiting middleware
 
 👀 *Reviews*
-- #127 — Refactor auth module (by @teammate)
+- #127 — Refactor auth module (@teammate's PR)
 
 🔨 *Working on today*
 - ENG-43 — Dashboard v2 (#130 open)
