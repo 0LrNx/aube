@@ -17,12 +17,13 @@ Single Python script. Fetches your activity, formats a message, posts it (or pri
 
 ## What it does
 
-- **Done** — completed Linear issues + merged PRs
+- **Done** — completed tickets + merged PRs
 - **Reviews** — PRs you reviewed (not your own)
-- **In progress** — started issues + open PRs
-- **Blockers** — issues with "block" in the title
-- **Ticket ↔ PR pairing** — when the Linear ID appears in the PR title
+- **In progress** — started tickets + open PRs
+- **Blockers** — tickets with "block" in the title
+- **Ticket ↔ PR pairing** — when the ticket ID appears in the PR title
 - **Monday-aware** — lookback goes back to Friday
+- **Pick your stack** — tickets (Linear or Azure DevOps Boards), code (GitHub or Azure DevOps Repos), and notification channel (Slack, Teams, or none) are chosen once at install time, in any combination
 
 ## Setup
 
@@ -31,17 +32,10 @@ git clone https://github.com/y2-znt/linear-github-standup.git
 cd linear-github-standup
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+python install.py
 ```
 
-`.env`:
-
-```
-GITHUB_TOKEN=       # PAT with repo scope
-GITHUB_USERNAME=
-LINEAR_TOKEN=       # Linear personal API key
-SLACK_WEBHOOK_URL=  # optional
-```
+`install.py` asks which ticket source, code source, and notification channel you use, and writes the answers to `.env`. Prefer to configure by hand? Copy `.env.example` to `.env` and fill it in yourself — see that file for which variables each provider needs.
 
 ```bash
 python standup.py
@@ -57,6 +51,15 @@ python standup.py
 
 - **GitHub** — [Settings → Tokens (classic)](https://github.com/settings/tokens), `repo` scope
 - **Linear** — [Settings → API](https://linear.app/settings/api) → Personal API keys
+- **Azure DevOps** — [Organization settings → Personal access tokens](https://dev.azure.com/), scopes: Work Items (Read) and Code (Read)
 - **Slack** — [api.slack.com/apps](https://api.slack.com/apps) → Incoming Webhooks → add to workspace
+- **Teams** — add an "Incoming Webhook" connector to your channel, copy its URL
 
 Everything runs locally. Tokens stay in your `.env`.
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
