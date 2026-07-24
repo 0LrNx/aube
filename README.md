@@ -30,8 +30,8 @@ Fetches your tickets & pull requests, composes a daily standup, and posts it (or
 ## Setup
 
 ```bash
-git clone https://github.com/0LrNx/linear-github-standup.git
-cd linear-github-standup
+git clone https://github.com/0LrNx/standup-composer.git
+cd standup-composer
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python install.py
