@@ -7,8 +7,8 @@ via `python install.py`) and prints a ready-to-paste standup message.
 Usage:
     python standup.py
 
-Cron (every weekday at 9am):
-    0 9 * * 1-5 cd /path/to/script && python standup.py | pbcopy
+Cron (every weekday at 8am):
+    0 8 * * 1-5 cd /path/to/script && python standup.py | pbcopy
     (pbcopy = copies to clipboard on macOS, use xclip on Linux)
 """
 
