@@ -29,10 +29,23 @@ Fetches your tickets & pull requests, composes a daily standup, and posts it (or
 
 ## Setup
 
+**macOS / Linux:**
+
 ```bash
 git clone https://github.com/0LrNx/standup-composer.git
 cd standup-composer
 python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python install.py
+```
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/0LrNx/standup-composer.git
+cd standup-composer
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python install.py
 ```
@@ -43,10 +56,23 @@ python install.py
 python standup.py
 ```
 
-**Cron** (weekdays 9am):
+**Scheduling** (weekdays 9am):
+
+macOS/Linux, via cron:
 
 ```
 0 9 * * 1-5 cd /path/to/standup-composer && .venv/bin/python standup.py
+```
+
+Windows, via Task Scheduler — GUI: create a weekly trigger (Mon-Fri, 9am) whose action runs
+`C:\path\to\standup-composer\.venv\Scripts\python.exe` with argument `standup.py` and "Start in" set to `C:\path\to\standup-composer`.
+
+Windows, via Task Scheduler — PowerShell (run as administrator):
+
+```powershell
+$action = New-ScheduledTaskAction -Execute "C:\path\to\standup-composer\.venv\Scripts\python.exe" -Argument "standup.py" -WorkingDirectory "C:\path\to\standup-composer"
+$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 9am
+Register-ScheduledTask -TaskName "StandupComposer" -Action $action -Trigger $trigger -Description "Generates the daily standup"
 ```
 
 ## Tokens
