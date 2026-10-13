@@ -58,6 +58,14 @@ python install.py
 python standup.py
 ```
 
+**Review before posting** — the tool can't guess what you'll work on today. Add `--review` to drop irrelevant items, add today's work and blockers, and confirm before anything is posted:
+
+```bash
+python standup.py --review
+```
+
+Scheduled runs stay fully automatic: just leave `--review` out.
+
 **Scheduling** (weekdays 9am):
 
 macOS/Linux, via cron:

@@ -44,13 +44,13 @@ class _Notifier:
         self.posted.append(text)
 
 
-def _run(monkeypatch, tickets, code, notifier):
+def _run(monkeypatch, tickets, code, notifier, argv=None):
     monkeypatch.setattr(standup, "_load_env", lambda: None)
     monkeypatch.setattr(standup, "_validate_env", lambda: None)
     monkeypatch.setattr(standup, "build_ticket_provider", lambda env: tickets)
     monkeypatch.setattr(standup, "build_code_provider", lambda env: code)
     monkeypatch.setattr(standup, "build_notifier", lambda env: notifier)
-    return standup.main()
+    return standup.main(argv or [])
 
 
 def test_main_posts_and_returns_zero_when_every_source_succeeds(monkeypatch):
@@ -144,3 +144,69 @@ def test_main_skips_the_logo_when_output_is_piped(monkeypatch, capsys):
     _run(monkeypatch, _Tickets(), _Code(), _Notifier())
 
     assert "a u b e" not in capsys.readouterr().out
+
+
+def _interactive(monkeypatch, answers):
+    import builtins
+    import sys
+
+    it = iter(answers)
+    monkeypatch.setattr(builtins, "input", lambda prompt="": next(it))
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+
+
+def test_review_flag_posts_the_reviewed_standup(monkeypatch):
+    notifier = _Notifier()
+    notifier.destination = "Slack"
+    _interactive(monkeypatch, ["", "Pair on the release", "", "", "y"])
+
+    exit_code = _run(monkeypatch, _Tickets(), _Code(), notifier, argv=["--review"])
+
+    assert exit_code == 0
+    assert len(notifier.posted) == 1
+    assert "- Pair on the release" in notifier.posted[0]
+
+
+def test_review_flag_does_not_post_when_declined(monkeypatch, capsys):
+    notifier = _Notifier()
+    notifier.destination = "Slack"
+    _interactive(monkeypatch, ["", "", "", "n"])
+
+    exit_code = _run(monkeypatch, _Tickets(), _Code(), notifier, argv=["--review"])
+
+    assert exit_code == 0
+    assert notifier.posted == []
+    assert "not posted" in capsys.readouterr().out.lower()
+
+
+def test_review_flag_refuses_to_run_without_an_interactive_terminal(monkeypatch, capsys):
+    import sys
+
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False, raising=False)
+    notifier = _Notifier()
+
+    exit_code = _run(monkeypatch, _Tickets(), _Code(), notifier, argv=["--review"])
+
+    assert exit_code == 2
+    assert notifier.posted == []
+    assert "--review" in capsys.readouterr().err
+
+
+def test_review_flag_cancels_cleanly_on_ctrl_c_or_end_of_input(monkeypatch, capsys):
+    import builtins
+    import sys
+
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    for error in (KeyboardInterrupt, EOFError):
+        def interrupted(prompt="", error=error):
+            raise error
+
+        monkeypatch.setattr(builtins, "input", interrupted)
+        notifier = _Notifier()
+        notifier.destination = "Slack"
+
+        exit_code = _run(monkeypatch, _Tickets(), _Code(), notifier, argv=["--review"])
+
+        assert exit_code == 130
+        assert notifier.posted == []
+        assert "cancelled" in capsys.readouterr().out.lower()
