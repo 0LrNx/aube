@@ -32,7 +32,7 @@ class _WebhookNotifier(NotificationSink):
         if not self.webhook_url:
             print(f"WARNING: {self._env_var} not set, skipping {self._label} post")
             return
-        resp = requests.post(self.webhook_url, json=self._payload(text))
+        resp = requests.post(self.webhook_url, json=self._payload(text), timeout=15)
         resp.raise_for_status()
         print(f"Standup posted to {self._label}.")
 

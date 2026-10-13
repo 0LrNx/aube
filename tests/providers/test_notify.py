@@ -82,3 +82,19 @@ def test_teams_notifier_uses_markdown_links_and_others_use_slack_links():
     assert TeamsNotifier(webhook_url="").link_format is markdown_link
     assert SlackNotifier(webhook_url="").link_format is slack_link
     assert NullNotifier().link_format is slack_link
+
+
+def test_webhook_notifiers_pass_a_timeout(monkeypatch):
+    timeouts = []
+
+    def fake_post(url, json=None, timeout=None):
+        timeouts.append(timeout)
+        return _FakeResponse()
+
+    monkeypatch.setattr("providers.notify.requests.post", fake_post)
+
+    SlackNotifier(webhook_url="https://hooks.slack.com/services/x").post("hello")
+    TeamsNotifier(webhook_url="https://outlook.office.com/webhook/x").post("hello")
+
+    assert len(timeouts) == 2
+    assert all(timeouts)
