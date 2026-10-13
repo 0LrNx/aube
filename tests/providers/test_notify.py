@@ -167,3 +167,10 @@ def test_webhook_network_error_does_not_leak_the_webhook_url(monkeypatch):
         assert "SUPER-SECRET-SIGNATURE" not in str(e)
         assert e.__cause__ is None
         assert e.__suppress_context__
+
+
+def test_notifiers_expose_where_they_post_only_when_configured():
+    assert SlackNotifier(webhook_url="https://hooks.slack.com/x").destination == "Slack"
+    assert TeamsNotifier(webhook_url="https://example.invalid/x").destination == "Teams"
+    assert SlackNotifier(webhook_url="").destination is None
+    assert NullNotifier().destination is None
