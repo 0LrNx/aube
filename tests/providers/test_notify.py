@@ -74,3 +74,11 @@ def test_null_notifier_does_nothing(monkeypatch):
 
     notifier = NullNotifier()
     notifier.post("hello standup")
+
+
+def test_teams_notifier_uses_markdown_links_and_others_use_slack_links():
+    from standup_core.builder import markdown_link, slack_link
+
+    assert TeamsNotifier(webhook_url="").link_format is markdown_link
+    assert SlackNotifier(webhook_url="").link_format is slack_link
+    assert NullNotifier().link_format is slack_link

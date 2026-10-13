@@ -38,7 +38,8 @@ def _resolve_user_id_with_retry(ask, resolve_user_id, env: dict) -> str:
         try:
             return resolve_user_id(env["AZURE_DEVOPS_ORG"], env["AZURE_DEVOPS_PAT"])
         except Exception as e:
-            print(f"Impossible de valider le Personal Access Token Azure DevOps ({e}).")
+            print(f"Impossible de valider l'organisation ou le Personal Access Token Azure DevOps ({e}).")
+            env["AZURE_DEVOPS_ORG"] = ask("Organisation Azure DevOps : ")
             env["AZURE_DEVOPS_PAT"] = ask("Personal Access Token Azure DevOps : ")
 
 
