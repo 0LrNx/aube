@@ -52,6 +52,21 @@ def test_github_provider_fetch_prs_maps_merged_and_opened(monkeypatch):
     assert prs["opened"] == [PullRequest(number=2, title="ABC-2: wip", url="https://github.com/x/pull/2")]
 
 
+def test_github_provider_fetch_prs_only_lists_still_open_prs_as_opened(monkeypatch):
+    urls = []
+
+    def fake_get(url, headers=None, timeout=None):
+        urls.append(url)
+        return _FakeResponse({"items": []})
+
+    monkeypatch.setattr("providers.code.requests.get", fake_get)
+
+    GitHubProvider(token="ghtoken", username="octocat").fetch_prs(lookback_days=1)
+
+    opened_url = next(url for url in urls if "created:" in url)
+    assert "+is:open" in opened_url
+
+
 def test_github_provider_fetch_prs_passes_timeout_and_raises_on_http_error(monkeypatch):
     captured = {}
 
