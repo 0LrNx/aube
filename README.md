@@ -13,7 +13,7 @@ Fetches your tickets & pull requests, composes a daily standup, and posts it (or
   <img src="https://img.shields.io/badge/Microsoft_Teams-6264A7.svg?logo=microsoftteams&logoColor=white" alt="Microsoft Teams">
 </p>
 
-<img src="images/standup-composer.png" alt="Aube — turn your tickets & pull requests into a daily standup. Bring your own stack." width="800">
+<img src="images/aube.png" alt="Aube — turn your tickets & pull requests into a daily standup. Bring your own stack." width="800">
 
 </div>
 
@@ -96,6 +96,12 @@ ruff check .
 Dependencies are pinned in `requirements.txt` / `requirements-dev.txt`. To upgrade, bump a version, reinstall, and re-run the tests.
 
 Values already set in your environment take precedence over `.env`.
+
+The README banner (`images/aube.png`) is rendered from `images/banner/banner.html`. After editing it, regenerate the PNG (3200×4120, rendered at 2× for sharp text) with headless Chrome, from the repo root in PowerShell:
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless=new --hide-scrollbars --force-device-scale-factor=2 --window-size=1600,2060 --virtual-time-budget=8000 --allow-file-access-from-files --screenshot="$PWD\images\aube.png" "file:///$($PWD -replace '\\','/')/images/banner/banner.html"
+```
 
 ## Credits
 
