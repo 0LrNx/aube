@@ -56,6 +56,20 @@ def test_linear_provider_maps_graphql_response_to_issues(monkeypatch):
     assert captured["headers"]["Authorization"] == "secret-token"
 
 
+def test_linear_provider_passes_a_timeout(monkeypatch):
+    captured = {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        captured["timeout"] = timeout
+        return _FakeResponse({"data": {"viewer": {"assignedIssues": {"nodes": []}}}})
+
+    monkeypatch.setattr("providers.tickets.requests.post", fake_post)
+
+    LinearProvider(token="secret-token").fetch_issues(lookback_days=1)
+
+    assert captured["timeout"]
+
+
 def test_azure_devops_boards_provider_maps_work_items_to_issues(monkeypatch):
     captured = {}
 
