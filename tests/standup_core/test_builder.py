@@ -150,3 +150,15 @@ def test_build_standup_does_not_treat_unblock_as_a_blocker():
     assert "ABC-9" in standup
     assert "ABC-10" in standup
     assert "ABC-8" not in standup
+
+
+def test_build_standup_includes_extra_today_and_blocker_lines():
+    standup = build_standup(
+        issues=[], merged_prs=[], opened_prs=[], reviews=[],
+        extra_today=["Pair on the release"], extra_blockers=["Waiting on legal"],
+    )
+
+    assert "- Pair on the release" in standup
+    assert "TBD" not in standup
+    assert "Blockers" in standup
+    assert "- Waiting on legal" in standup

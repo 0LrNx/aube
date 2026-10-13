@@ -5,12 +5,14 @@ Fetches your tickets + PRs from the last 24h (whichever stack you configured
 via `python install.py`) and prints a ready-to-paste standup message.
 
 Usage:
-    python standup.py
+    python standup.py            # compose and post
+    python standup.py --review   # drop items, add today's work / blockers, confirm before posting
 
 Scheduling: see the README (cron on macOS/Linux, Task Scheduler on Windows).
 Exits with code 1, without posting, if any ticket/PR/review source fails.
 """
 
+import argparse
 import os
 import sys
 from datetime import datetime
@@ -18,6 +20,7 @@ from datetime import datetime
 from providers.factory import build_code_provider, build_notifier, build_ticket_provider, required_env
 from standup_core.builder import build_standup
 from standup_core.logo import render as render_logo
+from standup_core.review import review
 
 
 def _load_env(env_path: str | None = None) -> None:
@@ -83,7 +86,23 @@ def _print_logo() -> None:
     print(render_logo(color=color) + "\n")
 
 
-def main() -> int:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Compose your daily standup and post it.")
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="review before posting: drop items, add today's work and blockers, then confirm",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    if args.review and not sys.stdin.isatty():
+        print("--review needs an interactive terminal (it asks questions); run it without --review here.",
+              file=sys.stderr)
+        return 2
+
     _load_env()
     _validate_env()
     _print_logo()
@@ -136,6 +155,16 @@ def main() -> int:
         for failure in failures:
             print(f"  - {failure}", file=sys.stderr)
         return 1
+
+    if args.review:
+        reviewed = review(
+            issues, prs["merged"], prs["opened"], reviews,
+            ask=input, show=print, fmt=notifier.message_format, destination=notifier.destination,
+        )
+        if reviewed is None:
+            print("Standup not posted (cancelled during review).")
+            return 0
+        standup = reviewed
 
     try:
         notifier.post(standup)

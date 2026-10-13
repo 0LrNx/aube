@@ -10,6 +10,8 @@ from standup_core.builder import MARKDOWN, SLACK, MessageFormat
 class NotificationSink(ABC):
     # How links and bold are written in the standup text, so they render in this channel.
     message_format: MessageFormat = SLACK
+    # Channel name shown to the user ("Slack", "Teams"), or None when nothing will actually be posted.
+    destination: str | None = None
 
     @abstractmethod
     def post(self, text: str) -> None:
@@ -24,6 +26,7 @@ class _WebhookNotifier(NotificationSink):
 
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
+        self.destination = self._label if webhook_url else None
 
     def _payload(self, text: str) -> dict:
         raise NotImplementedError

@@ -1,7 +1,7 @@
 """Pure standup message construction, independent of any provider."""
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -102,7 +102,10 @@ def build_standup(
     opened_prs: list[PullRequest],
     reviews: list[Review],
     fmt: MessageFormat = SLACK,
+    extra_today: Sequence[str] = (),
+    extra_blockers: Sequence[str] = (),
 ) -> str:
+    """Compose the standup; extra_* are free-text lines typed by the user (see --review)."""
     done_issues = [i for i in issues if i.state_type in ("completed", "cancelled")]
     in_progress = [i for i in issues if i.state_type == "started"]
     blockers = [i for i in issues if i.state_type == "backlog" and _BLOCKER_PATTERN.search(i.title)]
@@ -124,14 +127,16 @@ def build_standup(
             lines.append(_format_review(fmt.link, review))
 
     lines.append(f"\n🔨 {fmt.bold('Working on today')}")
-    if not in_progress and not opened_prs:
+    if not in_progress and not opened_prs and not extra_today:
         lines.append("— TBD")
     else:
         _append_section(lines, in_progress, opened_prs, "open", fmt)
+        lines.extend(f"- {line}" for line in extra_today)
 
-    if blockers:
+    if blockers or extra_blockers:
         lines.append(f"\n🚧 {fmt.bold('Blockers')}")
         for i in blockers:
             lines.append(_format_issue(fmt.link, i))
+        lines.extend(f"- {line}" for line in extra_blockers)
 
     return "\n".join(lines)
