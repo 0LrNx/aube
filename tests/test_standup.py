@@ -111,3 +111,36 @@ def test_main_returns_nonzero_with_a_clean_message_when_posting_fails(monkeypatc
     err = capsys.readouterr().err
     assert "Standup NOT posted" in err
     assert "HTTP 400: bad payload" in err
+
+
+def test_main_prints_the_colored_logo_in_an_interactive_terminal(monkeypatch, capsys):
+    import sys
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(standup, "_enable_ansi_on_windows", lambda: True)
+
+    _run(monkeypatch, _Tickets(), _Code(), _Notifier())
+
+    out = capsys.readouterr().out
+    assert "a u b e" in out
+    assert "\x1b[38;2;" in out
+
+
+def test_main_prints_a_plain_logo_when_no_color_is_set(monkeypatch, capsys):
+    import sys
+
+    monkeypatch.setenv("NO_COLOR", "1")
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+
+    _run(monkeypatch, _Tickets(), _Code(), _Notifier())
+
+    out = capsys.readouterr().out
+    assert "a u b e" in out
+    assert "\x1b[" not in out
+
+
+def test_main_skips_the_logo_when_output_is_piped(monkeypatch, capsys):
+    _run(monkeypatch, _Tickets(), _Code(), _Notifier())
+
+    assert "a u b e" not in capsys.readouterr().out
