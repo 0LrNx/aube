@@ -8,6 +8,8 @@ import requests
 from providers.azure_devops import basic_auth_header, url_segment
 from standup_core.models import PullRequest, Review
 
+_GITHUB_PAGE_SIZE = 100
+
 
 class CodeProvider(ABC):
     @abstractmethod
@@ -54,27 +56,24 @@ class GitHubProvider(CodeProvider):
             "https://github.com/settings/tokens"
         )
 
+    def _search(self, query: str, timeout: int = 15) -> list[dict]:
+        """Run a GitHub issue search, following pages (the API caps results at 1000, i.e. 10 pages)."""
+        items = []
+        for page in range(1, 11):
+            url = f"https://api.github.com/search/issues?q={query}&per_page={_GITHUB_PAGE_SIZE}&page={page}"
+            resp = requests.get(url, headers=self._headers, timeout=timeout)
+            resp.raise_for_status()
+            page_items = resp.json().get("items", [])
+            items.extend(page_items)
+            if len(page_items) < _GITHUB_PAGE_SIZE:
+                break
+        return items
+
     def fetch_prs(self, lookback_days: int) -> dict:
         since, today = self._window(lookback_days)
 
-        merged_url = (
-            "https://api.github.com/search/issues"
-            f"?q=author:{self.username}+type:pr+merged:{since}..{today}"
-            "&per_page=20"
-        )
-        opened_url = (
-            "https://api.github.com/search/issues"
-            f"?q=author:{self.username}+type:pr+is:open+created:{since}..{today}"
-            "&per_page=20"
-        )
-
-        merged_resp = requests.get(merged_url, headers=self._headers, timeout=15)
-        merged_resp.raise_for_status()
-        opened_resp = requests.get(opened_url, headers=self._headers, timeout=15)
-        opened_resp.raise_for_status()
-
-        merged = merged_resp.json().get("items", [])
-        opened = opened_resp.json().get("items", [])
+        merged = self._search(f"author:{self.username}+type:pr+merged:{since}..{today}")
+        opened = self._search(f"author:{self.username}+type:pr+is:open+created:{since}..{today}")
 
         return {
             "merged": [self._to_pull_request(item) for item in merged],
@@ -84,14 +83,10 @@ class GitHubProvider(CodeProvider):
     def fetch_reviews(self, lookback_days: int) -> list[Review]:
         since, today = self._window(lookback_days)
 
-        url = (
-            "https://api.github.com/search/issues"
-            f"?q=reviewed-by:{self.username}+-author:{self.username}+type:pr+updated:{since}..{today}"
-            "&per_page=20"
+        items = self._search(
+            f"reviewed-by:{self.username}+-author:{self.username}+type:pr+updated:{since}..{today}",
+            timeout=30,
         )
-        resp = requests.get(url, headers=self._headers, timeout=30)
-        resp.raise_for_status()
-        items = resp.json().get("items", [])
         return [
             Review(
                 number=item["number"],

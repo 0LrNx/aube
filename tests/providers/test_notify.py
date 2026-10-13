@@ -36,7 +36,7 @@ def test_slack_notifier_skips_when_no_webhook_configured(monkeypatch, capsys):
     assert "SLACK_WEBHOOK_URL not set" in capsys.readouterr().out
 
 
-def test_teams_notifier_posts_text_as_message_card(monkeypatch):
+def test_teams_notifier_posts_text_as_adaptive_card_one_block_per_line(monkeypatch):
     captured = {}
 
     def fake_post(url, json=None, **kwargs):
@@ -46,12 +46,22 @@ def test_teams_notifier_posts_text_as_message_card(monkeypatch):
 
     monkeypatch.setattr("providers.notify.requests.post", fake_post)
 
-    notifier = TeamsNotifier(webhook_url="https://outlook.office.com/webhook/x")
-    notifier.post("hello standup")
+    notifier = TeamsNotifier(webhook_url="https://prod.westeurope.logic.azure.com/workflows/x")
+    notifier.post("**Standup**\n\n✅ **Done**\n- item")
 
-    assert captured["url"] == "https://outlook.office.com/webhook/x"
-    assert captured["json"]["@type"] == "MessageCard"
-    assert captured["json"]["text"] == "hello standup"
+    payload = captured["json"]
+    assert captured["url"] == "https://prod.westeurope.logic.azure.com/workflows/x"
+    assert payload["type"] == "message"
+    attachment = payload["attachments"][0]
+    assert attachment["contentType"] == "application/vnd.microsoft.card.adaptive"
+    card = attachment["content"]
+    assert card["type"] == "AdaptiveCard"
+    body = card["body"]
+    assert [block["text"] for block in body] == ["**Standup**", "✅ **Done**", "- item"]
+    assert all(block["type"] == "TextBlock" and block["wrap"] for block in body)
+    # A blank line in the text becomes extra spacing before the next block.
+    assert body[1].get("spacing") == "Large"
+    assert "spacing" not in body[2]
 
 
 def test_teams_notifier_skips_when_no_webhook_configured(monkeypatch, capsys):
@@ -76,12 +86,12 @@ def test_null_notifier_does_nothing(monkeypatch):
     notifier.post("hello standup")
 
 
-def test_teams_notifier_uses_markdown_links_and_others_use_slack_links():
-    from standup_core.builder import markdown_link, slack_link
+def test_teams_notifier_uses_markdown_format_and_others_use_slack_format():
+    from standup_core.builder import MARKDOWN, SLACK
 
-    assert TeamsNotifier(webhook_url="").link_format is markdown_link
-    assert SlackNotifier(webhook_url="").link_format is slack_link
-    assert NullNotifier().link_format is slack_link
+    assert TeamsNotifier(webhook_url="").message_format is MARKDOWN
+    assert SlackNotifier(webhook_url="").message_format is SLACK
+    assert NullNotifier().message_format is SLACK
 
 
 def test_webhook_notifiers_pass_a_timeout(monkeypatch):

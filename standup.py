@@ -97,7 +97,7 @@ def main() -> int:
         failures.append(f"reviews: {e}")
         reviews = []
 
-    standup = build_standup(issues, prs["merged"], prs["opened"], reviews, link=notifier.link_format)
+    standup = build_standup(issues, prs["merged"], prs["opened"], reviews, fmt=notifier.message_format)
 
     print("\n" + "─" * 50)
     print(standup)
