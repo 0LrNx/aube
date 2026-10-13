@@ -81,7 +81,7 @@ Register-ScheduledTask -TaskName "StandupComposer" -Action $action -Trigger $tri
 - **Linear** — [Settings → API](https://linear.app/settings/api) → Personal API keys
 - **Azure DevOps** — [Organization settings → Personal access tokens](https://dev.azure.com/), scopes: Work Items (Read) and Code (Read)
 - **Slack** — [api.slack.com/apps](https://api.slack.com/apps) → Incoming Webhooks → add to workspace
-- **Teams** — add an "Incoming Webhook" connector to your channel, copy its URL
+- **Teams** — in your channel, create a Workflow from the template "Post to a channel when a webhook request is received" and copy its URL (legacy "Incoming Webhook" connector URLs still work too)
 
 Everything runs locally. Tokens stay in your `.env`.
 

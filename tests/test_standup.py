@@ -1,5 +1,5 @@
 import standup
-from standup_core.builder import slack_link
+from standup_core.builder import SLACK
 from standup_core.models import Issue
 
 
@@ -33,7 +33,7 @@ class _Code:
 
 
 class _Notifier:
-    link_format = staticmethod(slack_link)
+    message_format = SLACK
 
     def __init__(self):
         self.posted = []

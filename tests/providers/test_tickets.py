@@ -70,6 +70,52 @@ def test_linear_provider_passes_a_timeout(monkeypatch):
     assert captured["timeout"]
 
 
+def _linear_page(identifiers, has_next=False, cursor=None):
+    nodes = [
+        {"identifier": i, "title": f"Issue {i}", "url": None, "state": {"name": "Todo", "type": "started"}}
+        for i in identifiers
+    ]
+    return {
+        "data": {
+            "viewer": {
+                "assignedIssues": {"nodes": nodes, "pageInfo": {"hasNextPage": has_next, "endCursor": cursor}}
+            }
+        }
+    }
+
+
+def test_linear_provider_follows_pagination(monkeypatch):
+    cursors = []
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        after = json["variables"].get("after")
+        cursors.append(after)
+        if after is None:
+            return _FakeResponse(_linear_page(["ABC-1", "ABC-2"], has_next=True, cursor="cursor-1"))
+        return _FakeResponse(_linear_page(["ABC-3"]))
+
+    monkeypatch.setattr("providers.tickets.requests.post", fake_post)
+
+    issues = LinearProvider(token="secret-token").fetch_issues(lookback_days=1)
+
+    assert [i.identifier for i in issues] == ["ABC-1", "ABC-2", "ABC-3"]
+    assert cursors == [None, "cursor-1"]
+
+
+def test_linear_provider_raises_a_clear_error_on_graphql_errors(monkeypatch):
+    def fake_post(url, headers=None, json=None, timeout=None):
+        return _FakeResponse({"data": None, "errors": [{"message": "Authentication required"}]})
+
+    monkeypatch.setattr("providers.tickets.requests.post", fake_post)
+
+    try:
+        LinearProvider(token="bad-token").fetch_issues(lookback_days=1)
+        raise AssertionError("expected a RuntimeError")
+    except RuntimeError as e:
+        assert "Linear API error" in str(e)
+        assert "Authentication required" in str(e)
+
+
 def test_azure_devops_boards_provider_maps_work_items_to_issues(monkeypatch):
     captured = {}
 

@@ -15,9 +15,11 @@ _ADO_COMPLETED_STATE_KEYWORDS = ("closed", "resolved", "done")
 _ADO_STARTED_STATE_KEYWORDS = ("active", "in progress", "doing", "committed")
 
 LINEAR_QUERY = """
-query MyIssues($updatedAt: DateTimeOrDuration) {
+query MyIssues($updatedAt: DateTimeOrDuration, $after: String) {
   viewer {
     assignedIssues(
+      first: 100
+      after: $after
       filter: { updatedAt: { gt: $updatedAt } }
       orderBy: updatedAt
     ) {
@@ -28,6 +30,7 @@ query MyIssues($updatedAt: DateTimeOrDuration) {
         state { name type }
         updatedAt
       }
+      pageInfo { hasNextPage endCursor }
     }
   }
 }
@@ -46,26 +49,41 @@ class LinearProvider(TicketProvider):
 
     def fetch_issues(self, lookback_days: int) -> list[Issue]:
         since = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
+        issues = []
+        after = None
+        while True:
+            connection = self._query({"updatedAt": since, "after": after})["viewer"]["assignedIssues"]
+            issues.extend(
+                Issue(
+                    identifier=node["identifier"],
+                    title=node["title"],
+                    url=node.get("url"),
+                    state_type=node["state"]["type"],
+                )
+                for node in connection["nodes"]
+            )
+            page_info = connection.get("pageInfo") or {}
+            if not page_info.get("hasNextPage"):
+                return issues
+            after = page_info["endCursor"]
+
+    def _query(self, variables: dict) -> dict:
         resp = requests.post(
             "https://api.linear.app/graphql",
             headers={
                 "Authorization": self.token,
                 "Content-Type": "application/json",
             },
-            json={"query": LINEAR_QUERY, "variables": {"updatedAt": since}},
+            json={"query": LINEAR_QUERY, "variables": variables},
             timeout=15,
         )
         resp.raise_for_status()
-        nodes = resp.json()["data"]["viewer"]["assignedIssues"]["nodes"]
-        return [
-            Issue(
-                identifier=node["identifier"],
-                title=node["title"],
-                url=node.get("url"),
-                state_type=node["state"]["type"],
-            )
-            for node in nodes
-        ]
+        payload = resp.json()
+        # GraphQL reports failures (bad token, invalid query...) with HTTP 200 and an "errors" list.
+        if payload.get("errors"):
+            messages = "; ".join(error.get("message", "unknown error") for error in payload["errors"])
+            raise RuntimeError(f"Linear API error: {messages}")
+        return payload["data"]
 
 
 class AzureDevOpsBoardsProvider(TicketProvider):
