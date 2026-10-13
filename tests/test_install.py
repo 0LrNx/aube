@@ -22,6 +22,36 @@ def test_questionnaire_linear_github_slack():
     }
 
 
+def test_questionnaire_reads_tokens_and_webhook_urls_without_echoing_them():
+    secret_prompts = []
+
+    def ask_secret(prompt):
+        secret_prompts.append(prompt)
+        return f"secret-{len(secret_prompts)}"
+
+    ask = _scripted_ask(["1", "1", "octocat", "1"])
+
+    env = run_questionnaire(ask, ask_secret=ask_secret)
+
+    assert env["LINEAR_TOKEN"] == "secret-1"
+    assert env["GITHUB_TOKEN"] == "secret-2"
+    assert env["GITHUB_USERNAME"] == "octocat"
+    assert env["SLACK_WEBHOOK_URL"] == "secret-3"
+    assert len(secret_prompts) == 3
+
+
+def test_questionnaire_reads_azure_devops_pat_without_echoing_it():
+    ask = _scripted_ask(["2", "my-org", "my-project", "1", "gh-token", "octocat", "3"])
+
+    def ask_secret(prompt):
+        return "pat-secret"
+
+    env = run_questionnaire(ask, ask_secret=ask_secret)
+
+    assert env["AZURE_DEVOPS_PAT"] == "pat-secret"
+    assert env["GITHUB_TOKEN"] == "pat-secret"
+
+
 def test_questionnaire_no_notification_channel():
     ask = _scripted_ask(["1", "lin-token", "1", "gh-token", "octocat", "3"])
 

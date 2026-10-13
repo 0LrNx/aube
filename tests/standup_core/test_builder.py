@@ -138,3 +138,15 @@ def test_build_standup_uses_given_message_format_everywhere():
     assert "✅ **Done" in standup
     assert "**Reviews**" in standup
     assert "**Working on today**" in standup
+
+
+def test_build_standup_does_not_treat_unblock_as_a_blocker():
+    unblock = _issue("ABC-8", "Unblock the deploy pipeline", "backlog")
+    blocked = _issue("ABC-9", "Blocked by infra", "backlog")
+    blocker = _issue("ABC-10", "Blocker: waiting on legal", "backlog")
+
+    standup = build_standup(issues=[unblock, blocked, blocker], merged_prs=[], opened_prs=[], reviews=[])
+
+    assert "ABC-9" in standup
+    assert "ABC-10" in standup
+    assert "ABC-8" not in standup

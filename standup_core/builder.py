@@ -7,8 +7,10 @@ from datetime import datetime
 
 from standup_core.models import Issue, PullRequest, Review
 
-
 LinkFormat = Callable[[str, str], str]
+
+# "block", "blocked", "blocker(s)", "blocking" as a whole word — but not "unblock".
+_BLOCKER_PATTERN = re.compile(r"\bblock(?:s|ed|er|ers|ing)?\b", re.IGNORECASE)
 
 
 def slack_link(url: str, text: str) -> str:
@@ -103,7 +105,7 @@ def build_standup(
 ) -> str:
     done_issues = [i for i in issues if i.state_type in ("completed", "cancelled")]
     in_progress = [i for i in issues if i.state_type == "started"]
-    blockers = [i for i in issues if i.state_type == "backlog" and "block" in i.title.lower()]
+    blockers = [i for i in issues if i.state_type == "backlog" and _BLOCKER_PATTERN.search(i.title)]
 
     lines = []
     today_str = datetime.now().strftime("%A %d %b")
