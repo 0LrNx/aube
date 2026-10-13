@@ -53,6 +53,7 @@ class LinearProvider(TicketProvider):
                 "Content-Type": "application/json",
             },
             json={"query": LINEAR_QUERY, "variables": {"updatedAt": since}},
+            timeout=15,
         )
         resp.raise_for_status()
         nodes = resp.json()["data"]["viewer"]["assignedIssues"]["nodes"]

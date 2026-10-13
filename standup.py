@@ -36,9 +36,6 @@ def _load_env():
                 os.environ[key.strip()] = val.strip().strip('"').strip("'")
 
 
-_load_env()
-
-
 def _validate_env() -> None:
     missing = [key for key in required_env(os.environ) if not os.environ.get(key, "").strip()]
     if not missing:
@@ -55,26 +52,27 @@ def _validate_env() -> None:
     sys.exit(1)
 
 
-_validate_env()
-
-
 def _lookback_days() -> int:
     """Return 3 on Monday (to cover Fri→Mon), 1 otherwise."""
     return 3 if datetime.now().weekday() == 0 else 1
 
 
-def main():
+def main() -> int:
+    _load_env()
+    _validate_env()
+
     tickets = build_ticket_provider(os.environ)
     code = build_code_provider(os.environ)
     notifier = build_notifier(os.environ)
     days = _lookback_days()
+    failures = []
 
     print("Fetching tickets...")
     try:
         issues = tickets.fetch_issues(days)
         print(f"  {len(issues)} issues updated in last {days * 24}h")
     except Exception as e:
-        print(f"  Ticket source error: {e}")
+        failures.append(f"tickets: {e}")
         issues = []
 
     print("Checking code provider credentials...")
@@ -88,7 +86,7 @@ def main():
         prs = code.fetch_prs(days)
         print(f"  {len(prs['merged'])} merged, {len(prs['opened'])} opened")
     except Exception as e:
-        print(f"  PR fetch error: {e}")
+        failures.append(f"pull requests: {e}")
         prs = {"merged": [], "opened": []}
 
     print("Fetching reviews...")
@@ -96,7 +94,7 @@ def main():
         reviews = code.fetch_reviews(days)
         print(f"  {len(reviews)} reviewed")
     except Exception as e:
-        print(f"  Review fetch error: {e}")
+        failures.append(f"reviews: {e}")
         reviews = []
 
     standup = build_standup(issues, prs["merged"], prs["opened"], reviews, link=notifier.link_format)
@@ -105,8 +103,16 @@ def main():
     print(standup)
     print("─" * 50)
 
+    # A partial standup would silently claim "nothing completed": show it, but don't post it.
+    if failures:
+        print("\nStandup NOT posted — some sources failed:", file=sys.stderr)
+        for failure in failures:
+            print(f"  - {failure}", file=sys.stderr)
+        return 1
+
     notifier.post(standup)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
