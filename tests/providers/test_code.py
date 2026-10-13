@@ -67,6 +67,31 @@ def test_github_provider_fetch_prs_only_lists_still_open_prs_as_opened(monkeypat
     assert "+is:open" in opened_url
 
 
+def test_github_provider_paginates_search_results_beyond_one_page(monkeypatch):
+    def items(start, count):
+        return [{"number": n, "title": f"PR {n}", "user": {"login": "other"}} for n in range(start, start + count)]
+
+    merged_pages = []
+
+    def fake_get(url, headers=None, timeout=None):
+        if "merged:" in url:
+            merged_pages.append(url)
+            assert "per_page=100" in url
+            if url.endswith("&page=1"):
+                return _FakeResponse({"items": items(1, 100)})
+            if url.endswith("&page=2"):
+                return _FakeResponse({"items": items(101, 5)})
+            raise AssertionError(f"unexpected page: {url}")
+        return _FakeResponse({"items": []})
+
+    monkeypatch.setattr("providers.code.requests.get", fake_get)
+
+    prs = GitHubProvider(token="ghtoken", username="octocat").fetch_prs(lookback_days=1)
+
+    assert len(prs["merged"]) == 105
+    assert len(merged_pages) == 2
+
+
 def test_github_provider_fetch_prs_passes_timeout_and_raises_on_http_error(monkeypatch):
     captured = {}
 

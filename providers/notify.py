@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 
 import requests
 
-from standup_core.builder import LinkFormat, markdown_link, slack_link
+from standup_core.builder import MARKDOWN, SLACK, MessageFormat
 
 
 class NotificationSink(ABC):
-    # How links are written in the standup text, so they render in this channel.
-    link_format: LinkFormat = staticmethod(slack_link)
+    # How links and bold are written in the standup text, so they render in this channel.
+    message_format: MessageFormat = SLACK
 
     @abstractmethod
     def post(self, text: str) -> None:
@@ -51,13 +51,36 @@ class SlackNotifier(_WebhookNotifier):
 class TeamsNotifier(_WebhookNotifier):
     _label = "Teams"
     _env_var = "TEAMS_WEBHOOK_URL"
-    link_format = staticmethod(markdown_link)
+    message_format = MARKDOWN
 
     def _payload(self, text: str) -> dict:
+        # Adaptive Card: accepted by Workflows webhooks (which replace the retired Office 365
+        # connectors) and by legacy Incoming Webhooks. One TextBlock per line keeps line breaks.
+        body = []
+        spacing = None
+        for line in text.split("\n"):
+            if not line.strip():
+                spacing = "Large"
+                continue
+            block = {"type": "TextBlock", "text": line, "wrap": True}
+            if spacing:
+                block["spacing"] = spacing
+                spacing = None
+            body.append(block)
         return {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "text": text,
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "contentUrl": None,
+                    "content": {
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "type": "AdaptiveCard",
+                        "version": "1.4",
+                        "body": body,
+                    },
+                }
+            ],
         }
 
 

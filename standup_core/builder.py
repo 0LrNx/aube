@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 
 from standup_core.models import Issue, PullRequest, Review
@@ -16,6 +17,18 @@ def slack_link(url: str, text: str) -> str:
 
 def markdown_link(url: str, text: str) -> str:
     return f"[{text}]({url})"
+
+
+@dataclass(frozen=True)
+class MessageFormat:
+    """How links and bold text are written, so the standup renders in the target channel."""
+
+    link: LinkFormat
+    bold: Callable[[str], str]
+
+
+SLACK = MessageFormat(link=slack_link, bold=lambda text: f"*{text}*")
+MARKDOWN = MessageFormat(link=markdown_link, bold=lambda text: f"**{text}**")
 
 
 def _link(link: LinkFormat, url: str | None, text: str) -> str:
@@ -72,13 +85,13 @@ def _append_section(
     issues: list[Issue],
     prs: list[PullRequest],
     pr_status: str,
-    link: LinkFormat,
+    fmt: MessageFormat,
 ) -> None:
     paired, unmatched = pair_issues_prs(issues, prs)
     for issue, pr in paired:
-        lines.append(_format_issue(link, issue, pr, pr_status if pr else None))
+        lines.append(_format_issue(fmt.link, issue, pr, pr_status if pr else None))
     for pr in unmatched:
-        lines.append(_format_pr(link, pr, pr_status))
+        lines.append(_format_pr(fmt.link, pr, pr_status))
 
 
 def build_standup(
@@ -86,7 +99,7 @@ def build_standup(
     merged_prs: list[PullRequest],
     opened_prs: list[PullRequest],
     reviews: list[Review],
-    link: LinkFormat = slack_link,
+    fmt: MessageFormat = SLACK,
 ) -> str:
     done_issues = [i for i in issues if i.state_type in ("completed", "cancelled")]
     in_progress = [i for i in issues if i.state_type == "started"]
@@ -94,29 +107,29 @@ def build_standup(
 
     lines = []
     today_str = datetime.now().strftime("%A %d %b")
-    lines.append(f"*Standup — {today_str}*\n")
+    lines.append(fmt.bold(f"Standup — {today_str}") + "\n")
 
     period = "Friday" if datetime.now().weekday() == 0 else "yesterday"
-    lines.append(f"✅ *Done {period}*")
+    lines.append(f"✅ {fmt.bold(f'Done {period}')}")
     if not done_issues and not merged_prs:
         lines.append("— nothing completed")
     else:
-        _append_section(lines, done_issues, merged_prs, "merged", link)
+        _append_section(lines, done_issues, merged_prs, "merged", fmt)
 
     if reviews:
-        lines.append("\n👀 *Reviews*")
+        lines.append(f"\n👀 {fmt.bold('Reviews')}")
         for review in reviews:
-            lines.append(_format_review(link, review))
+            lines.append(_format_review(fmt.link, review))
 
-    lines.append("\n🔨 *Working on today*")
+    lines.append(f"\n🔨 {fmt.bold('Working on today')}")
     if not in_progress and not opened_prs:
         lines.append("— TBD")
     else:
-        _append_section(lines, in_progress, opened_prs, "open", link)
+        _append_section(lines, in_progress, opened_prs, "open", fmt)
 
     if blockers:
-        lines.append("\n🚧 *Blockers*")
+        lines.append(f"\n🚧 {fmt.bold('Blockers')}")
         for i in blockers:
-            lines.append(_format_issue(link, i))
+            lines.append(_format_issue(fmt.link, i))
 
     return "\n".join(lines)
