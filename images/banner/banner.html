@@ -1,0 +1,264 @@
+<!doctype html>
+<!--
+  Source of images/aube.png (the README banner).
+  Regenerate with the command in the README "Development" section.
+
+  Logos: linear, github, slack and teams SVGs come from SVG Logos (https://svglogos.dev,
+  CC0 1.0); github and linear are recoloured for the dark tiles. azure-boards and azure-repos
+  are simple redrawings (not in that library). All marks belong to their respective owners.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Aube banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@800;900&family=JetBrains+Mono:wght@400;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --night: #120c22;
+    --plum: #2b1535;
+    --rose: #ff7a9a;
+    --peach: #ffb085;
+    --cream: #fff1e4;
+    --muted: #b8a3b4;
+    --tile: rgba(22, 13, 30, 0.62);
+    --line: rgba(255, 190, 160, 0.16);
+    --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 1600px; height: 2060px; }
+
+  body {
+    position: relative;
+    overflow: hidden;
+    font-family: var(--mono);
+    color: var(--cream);
+    /* Night sky at the top, dawn breaking behind the title, plum dusk below. */
+    background:
+      radial-gradient(ellipse 70% 30% at 50% 33%, rgba(255, 176, 120, 0.55), rgba(255, 122, 154, 0.28) 45%, transparent 75%),
+      linear-gradient(180deg,
+        var(--night) 0%,
+        #1d1230 14%,
+        #4a1c45 26%,
+        #a33a5e 31%,
+        #e0686c 35%,
+        #9a365c 40%,
+        #3a1838 52%,
+        var(--plum) 62%,
+        #170d1f 100%);
+  }
+
+  /* A soft rising sun just under the title. */
+  .sun {
+    position: absolute;
+    left: 50%;
+    top: 560px;
+    width: 900px;
+    height: 900px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 200, 140, 0.42), rgba(255, 140, 120, 0.18) 38%, transparent 66%);
+    filter: blur(8px);
+  }
+
+  .stars {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 420px;
+    background-image:
+      radial-gradient(1.5px 1.5px at 8% 12%, rgba(255,255,255,.7), transparent),
+      radial-gradient(1px 1px at 19% 28%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1.5px 1.5px at 33% 9%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 47% 22%, rgba(255,255,255,.45), transparent),
+      radial-gradient(1.5px 1.5px at 61% 6%, rgba(255,255,255,.65), transparent),
+      radial-gradient(1px 1px at 72% 25%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1.5px 1.5px at 86% 11%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 94% 31%, rgba(255,255,255,.4), transparent);
+  }
+
+  main { position: relative; padding: 130px 120px 0; }
+
+  /* --- Integrations ------------------------------------------------- */
+  .stack { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+
+  .group h2 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.32em;
+    color: var(--peach);
+    margin-bottom: 26px;
+  }
+
+  .group .card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-around;
+    padding: 24px 20px 22px;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    background: rgba(18, 10, 26, 0.38);
+    backdrop-filter: blur(6px);
+  }
+
+  .tool { display: flex; flex-direction: column; align-items: center; gap: 22px; width: 170px; }
+
+  .tool .tile {
+    display: grid;
+    place-items: center;
+    width: 110px;
+    height: 110px;
+    border-radius: 26px;
+    border: 1px solid var(--line);
+    background: var(--tile);
+  }
+
+  .tool .tile img { width: 56px; height: 56px; object-fit: contain; }
+
+  .tool span { font-size: 19px; color: var(--cream); opacity: 0.85; }
+
+  .slash { align-self: center; margin-top: -40px; font-size: 34px; color: var(--muted); opacity: 0.6; }
+
+  /* --- Title -------------------------------------------------------- */
+  h1 {
+    margin-top: 70px;
+    text-align: center;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    font-weight: 900;
+    font-size: 260px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(180deg, #fff6ec 10%, #ffd3ad 55%, #ff9fae 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 10px 40px rgba(255, 120, 120, 0.35));
+  }
+
+  .tagline {
+    margin: 34px auto 0;
+    max-width: 1320px;
+    text-align: center;
+    font-size: 30px;
+    line-height: 1.55;
+    color: #f6e2d8;
+    text-shadow: 0 2px 18px rgba(40, 10, 30, 0.55);
+  }
+
+  .tagline b { color: #fff; }
+
+  /* --- Terminal ----------------------------------------------------- */
+  .terminal {
+    margin: 64px 30px 0;
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    background: rgba(16, 9, 22, 0.86);
+    box-shadow: 0 40px 120px rgba(10, 4, 16, 0.6);
+    overflow: hidden;
+  }
+
+  .terminal .bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 200, 170, 0.04);
+  }
+
+  .dot { width: 20px; height: 20px; border-radius: 50%; }
+  .red { background: #ff5f57; }
+  .yellow { background: #febc2e; }
+  .green { background: #28c840; }
+  .bar .name { margin-left: 18px; font-size: 21px; color: var(--muted); }
+
+  pre {
+    padding: 36px 40px 40px;
+    font-family: var(--mono);
+    font-size: 24px;
+    line-height: 1.8;
+    color: var(--cream);
+    white-space: pre;
+  }
+
+  .prompt { color: var(--peach); }
+  .dim { color: #a28b9f; }
+  .rule { display: block; width: 660px; border-top: 2px solid rgba(255, 190, 160, 0.18); margin: 14px 0; }
+  .ticket { color: var(--peach); }
+  .pr { color: var(--rose); }
+  .user { color: #cdb2ff; }
+  .ok { color: #8be0a8; }
+  b { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="sun"></div>
+
+<main>
+  <section class="stack">
+    <div class="group">
+      <h2>TICKETS</h2>
+      <div class="card">
+        <div class="tool"><div class="tile"><img src="linear.svg" alt=""></div><span>Linear</span></div>
+        <div class="slash">/</div>
+        <div class="tool"><div class="tile"><img src="azure-boards.svg" alt=""></div><span>Azure Boards</span></div>
+      </div>
+    </div>
+    <div class="group">
+      <h2>CODE</h2>
+      <div class="card">
+        <div class="tool"><div class="tile"><img src="github.svg" alt=""></div><span>GitHub</span></div>
+        <div class="slash">/</div>
+        <div class="tool"><div class="tile"><img src="azure-repos.svg" alt=""></div><span>Azure Repos</span></div>
+      </div>
+    </div>
+    <div class="group">
+      <h2>NOTIFY</h2>
+      <div class="card">
+        <div class="tool"><div class="tile"><img src="slack.svg" alt=""></div><span>Slack</span></div>
+        <div class="slash">/</div>
+        <div class="tool"><div class="tile"><img src="teams.svg" alt=""></div><span>Teams</span></div>
+      </div>
+    </div>
+  </section>
+
+  <h1>Aube</h1>
+
+  <p class="tagline">
+    Turn your tickets &amp; pull requests into a daily standup. <b>Bring your own stack</b>
+    — pick your tools once, run it every morning.
+  </p>
+
+  <section class="terminal">
+    <div class="bar">
+      <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+      <span class="name">standup.py</span>
+    </div>
+<pre><span class="prompt">$</span> python standup.py
+<span class="dim">Fetching tickets...
+  6 issues updated in last 24h
+Fetching PRs...
+  3 merged, 2 opened
+Fetching reviews...
+  2 reviewed</span>
+<span class="rule"></span><b>Standup — Wednesday 15 Jul</b>
+
+✅ <b>Done yesterday</b>
+- <span class="ticket">TSK-101</span> — Improve onboarding flow (<span class="pr">#321</span> merged)
+- <span class="ticket">TSK-87</span> — Fix data synchronization (<span class="pr">#315</span> merged)
+
+👀 <b>Reviews</b>
+- <span class="pr">#330</span> — Add search to activity log (<span class="user">@alice</span>'s PR)
+
+🔨 <b>Working on today</b>
+- <span class="ticket">TSK-102</span> — Implement analytics tracking
+- <span class="ticket">TSK-88</span> — Enhance reporting export
+<span class="rule"></span><span class="ok">Standup posted to Slack.</span></pre>
+  </section>
+</main>
+</body>
+</html>
