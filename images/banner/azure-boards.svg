@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 40" width="46" height="40">
+  <title>Azure Boards</title>
+  <rect width="46" height="40" rx="4.5" fill="#0078D4"/>
+  <g fill="#EAF3FC">
+    <rect x="7.9" y="6.9" width="8.7" height="18.1" rx="2"/>
+    <rect x="19" y="6.9" width="8.6" height="25.6" rx="2"/>
+    <rect x="30" y="6.9" width="8.9" height="12.5" rx="2"/>
+  </g>
+</svg>

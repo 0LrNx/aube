@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 51" width="42" height="51">
+  <title>Azure Repos</title>
+  <g fill="none" stroke="#61ACFF" stroke-width="4.5" stroke-linecap="round">
+    <circle cx="8.5" cy="8.6" r="5.75"/>
+    <circle cx="8.5" cy="41.8" r="5.75"/>
+    <circle cx="33.5" cy="18" r="5.75"/>
+    <path d="M8.5 14.4 V36"/>
+    <path d="M33.5 23.8 C33.5 31.5 28.5 36.6 20.5 37.4"/>
+  </g>
+</svg>
