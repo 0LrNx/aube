@@ -74,16 +74,46 @@ macOS/Linux, via cron:
 0 9 * * 1-5 cd /path/to/aube && .venv/bin/python standup.py
 ```
 
-Windows, via Task Scheduler — GUI: create a weekly trigger (Mon-Fri, 9am) whose action runs
-`C:\path\to\aube\.venv\Scripts\python.exe` with argument `standup.py` and "Start in" set to `C:\path\to\aube`.
-
-Windows, via Task Scheduler — PowerShell (run as administrator):
+Windows, via Task Scheduler — PowerShell (no admin rights needed for a task on your own account):
 
 ```powershell
-$action = New-ScheduledTaskAction -Execute "C:\path\to\aube\.venv\Scripts\python.exe" -Argument "standup.py" -WorkingDirectory "C:\path\to\aube"
+$dir = "C:\path\to\aube"
+$action = New-ScheduledTaskAction -Execute "$dir\.venv\Scripts\python.exe" -Argument "standup.py" -WorkingDirectory $dir
 $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 9am
-Register-ScheduledTask -TaskName "Aube" -Action $action -Trigger $trigger -Description "Generates the daily standup"
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries
+Register-ScheduledTask -TaskName "Aube" -Action $action -Trigger $trigger -Settings $settings -Description "Generates the daily standup"
 ```
+
+`-WorkingDirectory` matters: it's how `standup.py` finds your `.env`. `-WakeToRun` wakes the PC from sleep at 9am (wake timers must be allowed in your power options), and `-StartWhenAvailable` catches up a missed run the next time the PC is on — only once, however many days were missed.
+
+The task runs only while you're logged in (a locked screen counts). To run it after a logout too, open the task in Task Scheduler and pick "Run whether user is logged on or not"; you'll have to re-enter your password there each time your Windows password changes.
+
+Check it, or run it now:
+
+```powershell
+Get-ScheduledTaskInfo -TaskName "Aube" | Select-Object LastRunTime, LastTaskResult, NextRunTime
+Start-ScheduledTask -TaskName "Aube"
+```
+
+Going on holiday? `Disable-ScheduledTask -TaskName "Aube"`, then `Enable-ScheduledTask` when you're back.
+
+**Shortcut command (Windows)** — add an `aube` function to your PowerShell profile (`notepad $PROFILE`) to run it from any folder:
+
+```powershell
+# Aube: daily standup. "aube" = interactive review; "aube -Post" = post directly, no questions.
+function aube {
+    param([switch]$Post)
+    $dir = "C:\path\to\aube"
+    $python = "$dir\.venv\Scripts\python.exe"
+    if ($Post) {
+        & $python "$dir\standup.py"
+    } else {
+        & $python "$dir\standup.py" --review
+    }
+}
+```
+
+Reload with `. $PROFILE`, or open a new terminal. If you move or rename the repo folder, update `$dir` in both the profile and the scheduled task.
 
 ## Tokens
 
