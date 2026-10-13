@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from providers.code import AzureDevOpsReposProvider, GitHubProvider
 from standup_core.models import PullRequest, Review
@@ -228,26 +228,38 @@ def test_ado_repos_provider_fetch_prs_excludes_pull_requests_outside_lookback_wi
     assert prs["merged"] == []
 
 
+_LAST_WEEK = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat().replace("+00:00", "Z")
+_REPO = {"id": "repo-guid", "webUrl": "https://dev.azure.com/my-org/my-project/_git/repo"}
+
+
+def _ado_pr(number, title, author_id, creation_date=_NOW, status="active", closed_date=None):
+    item = {
+        "pullRequestId": number,
+        "title": title,
+        "status": status,
+        "creationDate": creation_date,
+        "createdBy": {"displayName": f"user-{author_id}", "id": author_id},
+        "repository": _REPO,
+    }
+    if closed_date:
+        item["closedDate"] = closed_date
+    return item
+
+
+def _thread(author_id, published_date):
+    return {"comments": [{"author": {"id": author_id}, "publishedDate": published_date}]}
+
+
 def test_ado_repos_provider_fetch_reviews_maps_to_review_model_excluding_own_prs(monkeypatch):
     def fake_get(url, headers=None, timeout=None):
+        if "/threads" in url:
+            return _FakeResponse({"value": [_thread("my-user-id", _NOW)]})
         assert "searchCriteria.reviewerId=my-user-id" in url
         return _FakeResponse(
             {
                 "value": [
-                    {
-                        "pullRequestId": 9,
-                        "title": "Add tests",
-                        "creationDate": _NOW,
-                        "createdBy": {"displayName": "someone-else", "id": "other-user-id"},
-                        "repository": {"webUrl": "https://dev.azure.com/my-org/my-project/_git/repo"},
-                    },
-                    {
-                        "pullRequestId": 10,
-                        "title": "My own PR I also reviewed",
-                        "creationDate": _NOW,
-                        "createdBy": {"displayName": "me", "id": "my-user-id"},
-                        "repository": {"webUrl": "https://dev.azure.com/my-org/my-project/_git/repo"},
-                    },
+                    _ado_pr(9, "Add tests", "other-user-id"),
+                    _ado_pr(10, "My own PR I also reviewed", "my-user-id"),
                 ]
             }
         )
@@ -264,9 +276,59 @@ def test_ado_repos_provider_fetch_reviews_maps_to_review_model_excluding_own_prs
             number=9,
             title="Add tests",
             url="https://dev.azure.com/my-org/my-project/_git/repo/pullrequest/9",
-            author="someone-else",
+            author="user-other-user-id",
         )
     ]
+
+
+def test_ado_repos_provider_fetch_reviews_uses_review_activity_date_not_pr_creation_date(monkeypatch):
+    threads_by_pr = {
+        # created last week, reviewed today -> included
+        "pullRequests/1/": [_thread("my-user-id", _NOW)],
+        # approved today with no comment of mine: vote thread authored by a service identity -> included
+        "pullRequests/4/": [
+            {
+                "publishedDate": _NOW,
+                "comments": [{"author": {"id": "tfs-service"}, "publishedDate": _NOW}],
+                "properties": {"CodeReviewVotedByIdentity": {"$value": "1"}},
+                "identities": {"1": {"id": "my-user-id"}},
+            }
+        ],
+        # created today, only someone else commented, my last activity was last week -> excluded
+        "pullRequests/2/": [_thread("other-user-id", _NOW), _thread("my-user-id", _LAST_WEEK)],
+    }
+    thread_urls = []
+
+    def fake_get(url, headers=None, timeout=None):
+        if "/threads" in url:
+            thread_urls.append(url)
+            key = next(k for k in threads_by_pr if k in url)
+            return _FakeResponse({"value": threads_by_pr[key]})
+        return _FakeResponse(
+            {
+                "value": [
+                    _ado_pr(1, "Old PR reviewed today", "other-user-id", creation_date=_LAST_WEEK),
+                    _ado_pr(2, "New PR not reviewed by me", "other-user-id"),
+                    _ado_pr(4, "Approved without comment", "other-user-id", creation_date=_LAST_WEEK),
+                    # completed before the window -> skipped without fetching threads
+                    _ado_pr(
+                        3, "Long done", "other-user-id",
+                        creation_date=_LAST_WEEK, status="completed", closed_date=_LAST_WEEK,
+                    ),
+                ]
+            }
+        )
+
+    monkeypatch.setattr("providers.code.requests.get", fake_get)
+
+    provider = AzureDevOpsReposProvider(
+        organization="my-org", project="my-project", token="pat-token", reviewer_id="my-user-id"
+    )
+    reviews = provider.fetch_reviews(lookback_days=1)
+
+    assert [r.number for r in reviews] == [1, 4]
+    assert len(thread_urls) == 3
+    assert all("/_apis/git/repositories/repo-guid/pullRequests/" in u for u in thread_urls)
 
 
 def test_ado_repos_provider_url_encodes_project_name_with_spaces(monkeypatch):

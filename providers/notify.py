@@ -4,8 +4,13 @@ from abc import ABC, abstractmethod
 
 import requests
 
+from standup_core.builder import LinkFormat, markdown_link, slack_link
+
 
 class NotificationSink(ABC):
+    # How links are written in the standup text, so they render in this channel.
+    link_format: LinkFormat = staticmethod(slack_link)
+
     @abstractmethod
     def post(self, text: str) -> None:
         ...
@@ -46,6 +51,7 @@ class SlackNotifier(_WebhookNotifier):
 class TeamsNotifier(_WebhookNotifier):
     _label = "Teams"
     _env_var = "TEAMS_WEBHOOK_URL"
+    link_format = staticmethod(markdown_link)
 
     def _payload(self, text: str) -> dict:
         return {
