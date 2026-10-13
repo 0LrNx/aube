@@ -1,6 +1,6 @@
 <div align="center">
 
-# Standup Composer
+# Aube
 
 Fetches your tickets & pull requests, composes a daily standup, and posts it (or prints it to your terminal). Bring your own stack.
 
@@ -13,7 +13,7 @@ Fetches your tickets & pull requests, composes a daily standup, and posts it (or
   <img src="https://img.shields.io/badge/Microsoft_Teams-6264A7.svg?logo=microsoftteams&logoColor=white" alt="Microsoft Teams">
 </p>
 
-<img src="images/standup-composer.png" alt="Standup Composer — turn your tickets & pull requests into a daily standup. Bring your own stack." width="800">
+<img src="images/standup-composer.png" alt="Aube — turn your tickets & pull requests into a daily standup. Bring your own stack." width="800">
 
 </div>
 
@@ -32,8 +32,8 @@ Fetches your tickets & pull requests, composes a daily standup, and posts it (or
 **macOS / Linux:**
 
 ```bash
-git clone https://github.com/0LrNx/standup-composer.git
-cd standup-composer
+git clone https://github.com/0LrNx/aube.git
+cd aube
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python install.py
@@ -42,8 +42,8 @@ python install.py
 **Windows (PowerShell):**
 
 ```powershell
-git clone https://github.com/0LrNx/standup-composer.git
-cd standup-composer
+git clone https://github.com/0LrNx/aube.git
+cd aube
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -61,18 +61,18 @@ python standup.py
 macOS/Linux, via cron:
 
 ```
-0 9 * * 1-5 cd /path/to/standup-composer && .venv/bin/python standup.py
+0 9 * * 1-5 cd /path/to/aube && .venv/bin/python standup.py
 ```
 
 Windows, via Task Scheduler — GUI: create a weekly trigger (Mon-Fri, 9am) whose action runs
-`C:\path\to\standup-composer\.venv\Scripts\python.exe` with argument `standup.py` and "Start in" set to `C:\path\to\standup-composer`.
+`C:\path\to\aube\.venv\Scripts\python.exe` with argument `standup.py` and "Start in" set to `C:\path\to\aube`.
 
 Windows, via Task Scheduler — PowerShell (run as administrator):
 
 ```powershell
-$action = New-ScheduledTaskAction -Execute "C:\path\to\standup-composer\.venv\Scripts\python.exe" -Argument "standup.py" -WorkingDirectory "C:\path\to\standup-composer"
+$action = New-ScheduledTaskAction -Execute "C:\path\to\aube\.venv\Scripts\python.exe" -Argument "standup.py" -WorkingDirectory "C:\path\to\aube"
 $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 9am
-Register-ScheduledTask -TaskName "StandupComposer" -Action $action -Trigger $trigger -Description "Generates the daily standup"
+Register-ScheduledTask -TaskName "Aube" -Action $action -Trigger $trigger -Description "Generates the daily standup"
 ```
 
 ## Tokens
@@ -99,4 +99,4 @@ Values already set in your environment take precedence over `.env`.
 
 ## Credits
 
-Standup Composer builds on [linear-github-standup](https://github.com/y2-znt/linear-github-standup) by [@y2-znt](https://github.com/y2-znt), extending the original Linear + GitHub + Slack tool with pluggable provider stacks (Azure DevOps Boards/Repos, Microsoft Teams) and an interactive installer.
+Aube builds on [linear-github-standup](https://github.com/y2-znt/linear-github-standup) by [@y2-znt](https://github.com/y2-znt), extending the original Linear + GitHub + Slack tool with pluggable provider stacks (Azure DevOps Boards/Repos, Microsoft Teams) and an interactive installer.
