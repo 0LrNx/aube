@@ -7,9 +7,8 @@ via `python install.py`) and prints a ready-to-paste standup message.
 Usage:
     python standup.py
 
-Cron (every weekday at 8am):
-    0 8 * * 1-5 cd /path/to/script && python standup.py | pbcopy
-    (pbcopy = copies to clipboard on macOS, use xclip on Linux)
+Scheduling: see the README (cron on macOS/Linux, Task Scheduler on Windows).
+Exits with code 1, without posting, if any ticket/PR/review source fails.
 """
 
 import os
@@ -20,8 +19,8 @@ from providers.factory import build_code_provider, build_notifier, build_ticket_
 from standup_core.builder import build_standup
 
 
-def _load_env():
-    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+def _load_env(env_path: str | None = None) -> None:
+    env_path = env_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
     try:
         f = open(env_path, encoding="utf-8")
     except FileNotFoundError:
@@ -33,7 +32,8 @@ def _load_env():
                 line = line[7:]
             if "=" in line and not line.startswith("#"):
                 key, _, val = line.partition("=")
-                os.environ[key.strip()] = val.strip().strip('"').strip("'")
+                # Variables already set in the environment win over .env, like python-dotenv / docker.
+                os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
 
 
 def _validate_env() -> None:

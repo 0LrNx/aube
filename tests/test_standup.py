@@ -1,3 +1,5 @@
+import os
+
 import standup
 from standup_core.builder import SLACK
 from standup_core.models import Issue
@@ -82,3 +84,17 @@ def test_main_does_not_post_and_fails_when_pr_or_review_fetch_errors(monkeypatch
         assert exit_code == 1
         assert notifier.posted == []
         assert "boom" in capsys.readouterr().err
+
+
+def test_load_env_does_not_override_variables_already_set_in_the_environment(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "STANDUP_TEST_FROM_SHELL=from-file\nexport STANDUP_TEST_FROM_FILE='octocat'\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("STANDUP_TEST_FROM_SHELL", "from-shell")
+    monkeypatch.delenv("STANDUP_TEST_FROM_FILE", raising=False)
+
+    standup._load_env(str(env_file))
+
+    assert os.environ["STANDUP_TEST_FROM_SHELL"] == "from-shell"
+    assert os.environ["STANDUP_TEST_FROM_FILE"] == "octocat"
