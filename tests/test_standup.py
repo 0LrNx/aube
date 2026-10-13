@@ -98,3 +98,16 @@ def test_load_env_does_not_override_variables_already_set_in_the_environment(tmp
 
     assert os.environ["STANDUP_TEST_FROM_SHELL"] == "from-shell"
     assert os.environ["STANDUP_TEST_FROM_FILE"] == "octocat"
+
+
+def test_main_returns_nonzero_with_a_clean_message_when_posting_fails(monkeypatch, capsys):
+    class _FailingNotifier(_Notifier):
+        def post(self, text):
+            raise RuntimeError("Teams webhook returned HTTP 400: bad payload")
+
+    exit_code = _run(monkeypatch, _Tickets(), _Code(), _FailingNotifier())
+
+    assert exit_code == 1
+    err = capsys.readouterr().err
+    assert "Standup NOT posted" in err
+    assert "HTTP 400: bad payload" in err

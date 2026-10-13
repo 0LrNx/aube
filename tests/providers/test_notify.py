@@ -2,6 +2,11 @@ from providers.notify import NullNotifier, SlackNotifier, TeamsNotifier
 
 
 class _FakeResponse:
+    def __init__(self, status_code=200, text=""):
+        self.status_code = status_code
+        self.ok = status_code < 400
+        self.text = text
+
     def raise_for_status(self):
         pass
 
@@ -108,3 +113,57 @@ def test_webhook_notifiers_pass_a_timeout(monkeypatch):
 
     assert len(timeouts) == 2
     assert all(timeouts)
+
+
+def test_teams_adaptive_card_attachment_has_no_null_content_url(monkeypatch):
+    # Teams Workflows validate the trigger body; a null contentUrl is rejected with HTTP 400.
+    captured = {}
+
+    def fake_post(url, json=None, timeout=None):
+        captured["json"] = json
+        return _FakeResponse()
+
+    monkeypatch.setattr("providers.notify.requests.post", fake_post)
+
+    TeamsNotifier(webhook_url="https://example.invalid/workflows/x").post("hello")
+
+    attachment = captured["json"]["attachments"][0]
+    assert attachment.get("contentUrl", "absent") is not None
+
+
+def test_webhook_error_reports_status_and_body_without_leaking_the_webhook_url(monkeypatch):
+    secret_url = "https://example.invalid/workflows/x/invoke?sig=SUPER-SECRET-SIGNATURE"
+
+    def fake_post(url, json=None, timeout=None):
+        return _FakeResponse(status_code=400, text='{"error":{"code":"TriggerInputSchemaMismatch"}}')
+
+    monkeypatch.setattr("providers.notify.requests.post", fake_post)
+
+    try:
+        TeamsNotifier(webhook_url=secret_url).post("hello")
+        raise AssertionError("expected a RuntimeError")
+    except RuntimeError as e:
+        message = str(e)
+        assert "Teams" in message
+        assert "400" in message
+        assert "TriggerInputSchemaMismatch" in message
+        assert "SUPER-SECRET-SIGNATURE" not in message
+
+
+def test_webhook_network_error_does_not_leak_the_webhook_url(monkeypatch):
+    import requests
+
+    secret_url = "https://example.invalid/workflows/x/invoke?sig=SUPER-SECRET-SIGNATURE"
+
+    def fake_post(url, json=None, timeout=None):
+        raise requests.ConnectionError(f"Max retries exceeded with url: {url}")
+
+    monkeypatch.setattr("providers.notify.requests.post", fake_post)
+
+    try:
+        TeamsNotifier(webhook_url=secret_url).post("hello")
+        raise AssertionError("expected a RuntimeError")
+    except RuntimeError as e:
+        assert "SUPER-SECRET-SIGNATURE" not in str(e)
+        assert e.__cause__ is None
+        assert e.__suppress_context__
