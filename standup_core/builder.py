@@ -1,5 +1,6 @@
 """Pure standup message construction, independent of any provider."""
 
+import re
 from datetime import datetime
 
 from standup_core.models import Issue, PullRequest, Review
@@ -30,10 +31,9 @@ def _format_review(review: Review) -> str:
 
 
 def _matches_issue(pr: PullRequest, issue: Issue) -> bool:
-    identifier = issue.identifier.lower()
-    if identifier in pr.title.lower():
-        return True
-    return identifier in (pr.description or "").lower()
+    # Bounded match so "ENG-1" doesn't pair with "ENG-12" (or "AB#12" with "AB#123").
+    pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(issue.identifier)}(?![0-9])", re.IGNORECASE)
+    return bool(pattern.search(pr.title) or pattern.search(pr.description or ""))
 
 
 def pair_issues_prs(
