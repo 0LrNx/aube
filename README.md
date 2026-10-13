@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="images/logo.svg" alt="Aube logo: a sun rising over the water" width="110">
+
 # Aube
 
 Fetches your tickets & pull requests, composes a daily standup, and posts it (or prints it to your terminal). Bring your own stack.
