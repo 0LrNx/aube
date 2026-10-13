@@ -1,1 +1,7 @@
-requests>=2.31.0
+# Pinned for reproducible installs (direct dependency + its transitive deps).
+# To upgrade: pip install -U requests, run the tests, then update the versions below.
+requests==2.32.5
+certifi==2025.11.12
+charset-normalizer==3.4.4
+idna==3.11
+urllib3==2.6.2

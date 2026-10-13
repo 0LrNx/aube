@@ -20,7 +20,7 @@ class CodeProvider(ABC):
     def fetch_reviews(self, lookback_days: int) -> list[Review]:
         ...
 
-    def validate_credentials(self) -> None:
+    def validate_credentials(self) -> None:  # noqa: B027 — optional hook, intentionally not abstract
         """Optional pre-flight check; providers override this to warn about misconfigured tokens."""
 
 
