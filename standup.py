@@ -17,6 +17,7 @@ from datetime import datetime
 
 from providers.factory import build_code_provider, build_notifier, build_ticket_provider, required_env
 from standup_core.builder import build_standup
+from standup_core.logo import render as render_logo
 
 
 def _load_env(env_path: str | None = None) -> None:
@@ -57,9 +58,35 @@ def _lookback_days() -> int:
     return 3 if datetime.now().weekday() == 0 else 1
 
 
+def _enable_ansi_on_windows() -> bool:
+    """Turn on ANSI escape support in the Windows console; return False if it can't be enabled."""
+    if os.name != "nt":
+        return True
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+        mode = ctypes.c_uint32()
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            return False
+        return bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004))  # ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    except Exception:
+        return False
+
+
+def _print_logo() -> None:
+    # Only for a human at a terminal: keep piped output, cron logs and tests free of the banner.
+    if not sys.stdout.isatty():
+        return
+    color = "NO_COLOR" not in os.environ and _enable_ansi_on_windows()
+    print(render_logo(color=color) + "\n")
+
+
 def main() -> int:
     _load_env()
     _validate_env()
+    _print_logo()
 
     tickets = build_ticket_provider(os.environ)
     code = build_code_provider(os.environ)
