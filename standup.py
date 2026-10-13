@@ -110,7 +110,11 @@ def main() -> int:
             print(f"  - {failure}", file=sys.stderr)
         return 1
 
-    notifier.post(standup)
+    try:
+        notifier.post(standup)
+    except Exception as e:
+        print(f"\nStandup NOT posted — {e}", file=sys.stderr)
+        return 1
     return 0
 
 
