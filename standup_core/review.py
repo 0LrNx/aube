@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 
-from standup_core.builder import SLACK, MessageFormat, build_standup
+from standup_core.builder import SLACK, MessageFormat, build_standup, shown_issues
 from standup_core.models import Issue, PullRequest, Review
 
 Ask = Callable[[str], str]
@@ -44,7 +44,8 @@ def review(
 ) -> str | None:
     """Let the user drop items, add today's work and blockers; return the final standup, or None if declined."""
     items: list[tuple[str, object]] = (
-        [("ticket", i) for i in issues]
+        # Only what the standup shows: tickets in other states (e.g. not started) would be noise here.
+        [("ticket", i) for i in shown_issues(issues)]
         + [("merged PR", pr) for pr in merged_prs]
         + [("open PR", pr) for pr in opened_prs]
         + [("review", r) for r in reviews]

@@ -84,3 +84,24 @@ def test_review_does_not_ask_for_confirmation_without_a_destination():
 
     assert standup is not None
     assert len(prompts) == 3
+
+
+def test_review_only_lists_tickets_that_appear_in_the_standup():
+    issues = [
+        Issue(identifier="AB#1", title="Ship feature", url=None, state_type="completed"),
+        Issue(identifier="AB#2", title="Not started yet", url=None, state_type="unstarted"),
+        Issue(identifier="AB#3", title="Some backlog item", url=None, state_type="backlog"),
+        Issue(identifier="AB#4", title="In progress", url=None, state_type="started"),
+    ]
+    ask, _ = _scripted(["2", "", ""])  # "2" must now mean AB#4, the 2nd *listed* item
+    shown = []
+
+    standup = review(issues, [], [], [], ask=ask, show=shown.append, destination=None)
+
+    listing = "\n".join(shown)
+    assert "AB#2" not in listing
+    assert "AB#3" not in listing
+    assert "1. [ticket] AB#1" in listing
+    assert "2. [ticket] AB#4" in listing
+    assert "AB#1" in standup
+    assert "AB#4" not in standup
