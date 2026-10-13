@@ -99,7 +99,7 @@ def main():
         print(f"  Review fetch error: {e}")
         reviews = []
 
-    standup = build_standup(issues, prs["merged"], prs["opened"], reviews)
+    standup = build_standup(issues, prs["merged"], prs["opened"], reviews, link=notifier.link_format)
 
     print("\n" + "─" * 50)
     print(standup)

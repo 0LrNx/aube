@@ -99,7 +99,7 @@ def test_questionnaire_retries_azure_devops_credentials_when_resolution_fails():
         [
             "1", "lin-token",  # tickets: Linear
             "2", "my-org", "my-project", "bad-pat",  # code: Azure DevOps Repos, first PAT is invalid
-            "good-pat",  # retry: re-enter just the PAT
+            "my-org", "good-pat",  # retry: re-enter org + PAT
             "3",  # notify: none
         ]
     )
@@ -109,6 +109,31 @@ def test_questionnaire_retries_azure_devops_credentials_when_resolution_fails():
     assert env["AZURE_DEVOPS_PAT"] == "good-pat"
     assert env["AZURE_DEVOPS_USER_ID"] == "resolved-user-id"
     assert attempts["n"] == 2
+
+
+def test_questionnaire_retry_lets_user_fix_a_mistyped_organization():
+    calls = []
+
+    def resolve_user_id(organization, token):
+        calls.append((organization, token))
+        if organization != "my-org":
+            raise RuntimeError("404 Not Found")
+        return "resolved-user-id"
+
+    ask = _scripted_ask(
+        [
+            "1", "lin-token",  # tickets: Linear
+            "2", "my-orgg", "my-project", "good-pat",  # code: Azure DevOps Repos, org has a typo
+            "my-org", "good-pat",  # retry: fix the org
+            "3",  # notify: none
+        ]
+    )
+
+    env = run_questionnaire(ask, resolve_user_id=resolve_user_id)
+
+    assert env["AZURE_DEVOPS_ORG"] == "my-org"
+    assert env["AZURE_DEVOPS_USER_ID"] == "resolved-user-id"
+    assert calls == [("my-orgg", "good-pat"), ("my-org", "good-pat")]
 
 
 def test_write_env_file_writes_key_value_pairs(tmp_path):
