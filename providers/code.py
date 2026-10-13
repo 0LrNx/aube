@@ -171,7 +171,7 @@ class AzureDevOpsReposProvider(CodeProvider):
             author = item["createdBy"]
             if self.reviewer_id and author.get("id") == self.reviewer_id:
                 continue
-            if self._parse_date(item["creationDate"]) < cutoff:
+            if not self._reviewed_since(item, cutoff):
                 continue
             reviews.append(
                 Review(
@@ -182,6 +182,38 @@ class AzureDevOpsReposProvider(CodeProvider):
                 )
             )
         return reviews
+
+    def _reviewed_since(self, item: dict, cutoff: datetime) -> bool:
+        """Whether the reviewer commented or voted on this PR since cutoff (PR creation date is irrelevant)."""
+        if not self.reviewer_id:
+            # Without a user id we can't tell whose activity is whose; fall back to the PR creation date.
+            return self._parse_date(item["creationDate"]) >= cutoff
+        closed = item.get("closedDate")
+        if item.get("status") != "active" and closed and self._parse_date(closed) < cutoff:
+            return False
+
+        org, project = url_segment(self.organization), url_segment(self.project)
+        url = (
+            f"https://dev.azure.com/{org}/{project}/_apis/git/repositories/{item['repository']['id']}"
+            f"/pullRequests/{item['pullRequestId']}/threads?api-version=7.0"
+        )
+        resp = requests.get(url, headers=self._headers, timeout=15)
+        resp.raise_for_status()
+        return any(self._thread_has_activity_since(thread, cutoff) for thread in resp.json().get("value", []))
+
+    def _thread_has_activity_since(self, thread: dict, cutoff: datetime) -> bool:
+        def recent(value: str | None) -> bool:
+            return bool(value) and self._parse_date(value) >= cutoff
+
+        # Vote threads name the voter in their properties, not necessarily as the comment author.
+        voter_key = thread.get("properties", {}).get("CodeReviewVotedByIdentity", {}).get("$value")
+        voter = thread.get("identities", {}).get(voter_key, {}) if voter_key else {}
+        if voter.get("id") == self.reviewer_id and recent(thread.get("publishedDate")):
+            return True
+        return any(
+            comment.get("author", {}).get("id") == self.reviewer_id and recent(comment.get("publishedDate"))
+            for comment in thread.get("comments", [])
+        )
 
     @staticmethod
     def _parse_date(value: str) -> datetime:
