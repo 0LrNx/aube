@@ -30,6 +30,37 @@ def test_pair_issues_prs_matches_by_identifier_in_description():
     assert unmatched == []
 
 
+def test_pair_issues_prs_does_not_match_identifier_prefix_of_longer_one():
+    issue = _issue("ENG-1", "Small fix", "completed")
+    ado_issue = _issue("AB#12", "Other fix", "completed")
+    pr = _pr(42, "ENG-12: unrelated work", description="Fixes AB#123")
+
+    paired, unmatched = pair_issues_prs([issue, ado_issue], [pr])
+
+    assert paired == [(issue, None), (ado_issue, None)]
+    assert unmatched == [pr]
+
+
+def test_pair_issues_prs_does_not_match_identifier_suffix_of_longer_one():
+    issue = _issue("ENG-1", "Small fix", "completed")
+    pr = _pr(42, "XENG-1: unrelated work")
+
+    paired, unmatched = pair_issues_prs([issue], [pr])
+
+    assert paired == [(issue, None)]
+    assert unmatched == [pr]
+
+
+def test_pair_issues_prs_matches_identifier_case_insensitively_next_to_punctuation():
+    issue = _issue("ENG-1", "Small fix", "completed")
+    pr = _pr(42, "[eng-1] small fix")
+
+    paired, unmatched = pair_issues_prs([issue], [pr])
+
+    assert paired == [(issue, pr)]
+    assert unmatched == []
+
+
 def test_pair_issues_prs_returns_unmatched_prs():
     issue = _issue("ABC-123", "Fix login bug", "completed")
     unrelated_pr = _pr(7, "Unrelated cleanup")

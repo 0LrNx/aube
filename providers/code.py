@@ -64,7 +64,7 @@ class GitHubProvider(CodeProvider):
         )
         opened_url = (
             "https://api.github.com/search/issues"
-            f"?q=author:{self.username}+type:pr+created:{since}..{today}"
+            f"?q=author:{self.username}+type:pr+is:open+created:{since}..{today}"
             "&per_page=20"
         )
 
