@@ -32,8 +32,14 @@ class _WebhookNotifier(NotificationSink):
         if not self.webhook_url:
             print(f"WARNING: {self._env_var} not set, skipping {self._label} post")
             return
-        resp = requests.post(self.webhook_url, json=self._payload(text), timeout=15)
-        resp.raise_for_status()
+        # The webhook URL is a credential (anyone holding it can post), so it must never end up in
+        # an error message: requests' own exceptions include it, hence the re-raise without context.
+        try:
+            resp = requests.post(self.webhook_url, json=self._payload(text), timeout=15)
+        except requests.RequestException as e:
+            raise RuntimeError(f"{self._label} webhook request failed ({type(e).__name__})") from None
+        if not resp.ok:
+            raise RuntimeError(f"{self._label} webhook returned HTTP {resp.status_code}: {resp.text[:500]}")
         print(f"Standup posted to {self._label}.")
 
 
@@ -72,7 +78,6 @@ class TeamsNotifier(_WebhookNotifier):
             "attachments": [
                 {
                     "contentType": "application/vnd.microsoft.card.adaptive",
-                    "contentUrl": None,
                     "content": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                         "type": "AdaptiveCard",
