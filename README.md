@@ -90,7 +90,12 @@ Everything runs locally. Tokens stay in your `.env`.
 ```bash
 pip install -r requirements-dev.txt
 pytest
+ruff check .
 ```
+
+Dependencies are pinned in `requirements.txt` / `requirements-dev.txt`. To upgrade, bump a version, reinstall, and re-run the tests.
+
+Values already set in your environment take precedence over `.env`.
 
 ## Credits
 
