@@ -1,4 +1,4 @@
-from standup_core.builder import build_standup, markdown_link, pair_issues_prs
+from standup_core.builder import MARKDOWN, build_standup, pair_issues_prs
 from standup_core.models import Issue, PullRequest, Review
 
 
@@ -121,16 +121,20 @@ def test_build_standup_uses_slack_links_by_default():
     standup = build_standup(issues=[issue], merged_prs=[], opened_prs=[], reviews=[])
 
     assert "<https://linear.app/x/ABC-1|ABC-1>" in standup
+    assert "✅ *Done" in standup
 
 
-def test_build_standup_uses_given_link_format_everywhere():
+def test_build_standup_uses_given_message_format_everywhere():
     issue = _issue("ABC-1", "Ship feature", "completed", url="https://linear.app/x/ABC-1")
     pr = _pr(10, "ABC-1: ship feature", url="https://github.com/x/pull/10")
     review = Review(number=5, title="Add tests", url="https://github.com/x/pull/5", author="octocat")
 
-    standup = build_standup(issues=[issue], merged_prs=[pr], opened_prs=[], reviews=[review], link=markdown_link)
+    standup = build_standup(issues=[issue], merged_prs=[pr], opened_prs=[], reviews=[review], fmt=MARKDOWN)
 
     assert "[ABC-1](https://linear.app/x/ABC-1)" in standup
     assert "[#10](https://github.com/x/pull/10)" in standup
     assert "[#5](https://github.com/x/pull/5)" in standup
     assert "<https://" not in standup
+    assert "✅ **Done" in standup
+    assert "**Reviews**" in standup
+    assert "**Working on today**" in standup
