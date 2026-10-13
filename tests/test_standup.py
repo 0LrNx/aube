@@ -190,3 +190,23 @@ def test_review_flag_refuses_to_run_without_an_interactive_terminal(monkeypatch,
     assert exit_code == 2
     assert notifier.posted == []
     assert "--review" in capsys.readouterr().err
+
+
+def test_review_flag_cancels_cleanly_on_ctrl_c_or_end_of_input(monkeypatch, capsys):
+    import builtins
+    import sys
+
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True, raising=False)
+    for error in (KeyboardInterrupt, EOFError):
+        def interrupted(prompt="", error=error):
+            raise error
+
+        monkeypatch.setattr(builtins, "input", interrupted)
+        notifier = _Notifier()
+        notifier.destination = "Slack"
+
+        exit_code = _run(monkeypatch, _Tickets(), _Code(), notifier, argv=["--review"])
+
+        assert exit_code == 130
+        assert notifier.posted == []
+        assert "cancelled" in capsys.readouterr().out.lower()

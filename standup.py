@@ -157,10 +157,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.review:
-        reviewed = review(
-            issues, prs["merged"], prs["opened"], reviews,
-            ask=input, show=print, fmt=notifier.message_format, destination=notifier.destination,
-        )
+        try:
+            reviewed = review(
+                issues, prs["merged"], prs["opened"], reviews,
+                ask=input, show=print, fmt=notifier.message_format, destination=notifier.destination,
+            )
+        except (KeyboardInterrupt, EOFError):
+            # Ctrl+C / Ctrl+Z: a deliberate abort, not a crash. 130 is the usual "interrupted" exit code.
+            print("\nCancelled — standup not posted.")
+            return 130
         if reviewed is None:
             print("Standup not posted (cancelled during review).")
             return 0

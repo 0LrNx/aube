@@ -96,6 +96,20 @@ def _append_section(
         lines.append(_format_pr(fmt.link, pr, pr_status))
 
 
+def _split_issues(issues: list[Issue]) -> tuple[list[Issue], list[Issue], list[Issue]]:
+    """Done, in progress, blockers. Issues in any other state don't appear in the standup."""
+    done = [i for i in issues if i.state_type in ("completed", "cancelled")]
+    in_progress = [i for i in issues if i.state_type == "started"]
+    blockers = [i for i in issues if i.state_type == "backlog" and _BLOCKER_PATTERN.search(i.title)]
+    return done, in_progress, blockers
+
+
+def shown_issues(issues: list[Issue]) -> list[Issue]:
+    """The issues build_standup will actually display, in display order."""
+    done, in_progress, blockers = _split_issues(issues)
+    return done + in_progress + blockers
+
+
 def build_standup(
     issues: list[Issue],
     merged_prs: list[PullRequest],
@@ -106,9 +120,7 @@ def build_standup(
     extra_blockers: Sequence[str] = (),
 ) -> str:
     """Compose the standup; extra_* are free-text lines typed by the user (see --review)."""
-    done_issues = [i for i in issues if i.state_type in ("completed", "cancelled")]
-    in_progress = [i for i in issues if i.state_type == "started"]
-    blockers = [i for i in issues if i.state_type == "backlog" and _BLOCKER_PATTERN.search(i.title)]
+    done_issues, in_progress, blockers = _split_issues(issues)
 
     lines = []
     today_str = datetime.now().strftime("%A %d %b")
